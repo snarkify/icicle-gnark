@@ -35,7 +35,6 @@ func VecOp(a, b, out core.HostOrDeviceSlice, config core.VecOpsConfig, op core.V
 	log.Debug().Uint64("count", count).Str("operation", "BN254_VECOP").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
 	// Start timing
-	start := time.Now()
 
 	cA := (*C.scalar_t)(aPointer)
 	cB := (*C.scalar_t)(bPointer)
@@ -43,6 +42,7 @@ func VecOp(a, b, out core.HostOrDeviceSlice, config core.VecOpsConfig, op core.V
 	cConfig := (*C.VecOpsConfig)(cfgPointer)
 	cSize := (C.int)(size)
 
+	start := time.Now()
 	switch op {
 	case core.Sub:
 		ret = (runtime.EIcicleError)(C.bn254_vector_sub(cA, cB, cSize, cConfig, cOut))

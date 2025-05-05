@@ -30,15 +30,13 @@ func G2Msm(scalars core.HostOrDeviceSlice, points core.HostOrDeviceSlice, cfg *c
 	log := logger.Logger()
 	log.Debug().Uint64("count", count).Str("operation", "BN254_G2_MSM").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
-	// Start timing
-	start := time.Now()
-
 	cScalars := (*C.scalar_t)(scalarsPointer)
 	cPoints := (*C.g2_affine_t)(pointsPointer)
 	cResults := (*C.g2_projective_t)(resultsPointer)
 	cSize := (C.int)(size)
 	cCfg := (*C.MSMConfig)(unsafe.Pointer(cfg))
 
+	start := time.Now()
 	__ret := C.bn254_g2_msm(cScalars, cPoints, cSize, cCfg, cResults)
 	err := runtime.EIcicleError(__ret)
 
@@ -69,9 +67,6 @@ func G2PrecomputeBases(bases core.HostOrDeviceSlice, cfg *core.MSMConfig, output
 	log := logger.Logger()
 	log.Debug().Uint64("count", count).Str("operation", "BN254_G2_MSM_PRECOMPUTE").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
-	// Start timing
-	start := time.Now()
-
 	cBases := (*C.g2_affine_t)(basesPointer)
 	var cBasesLen C.int
 	if cfg.ArePointsSharedInBatch {
@@ -82,6 +77,7 @@ func G2PrecomputeBases(bases core.HostOrDeviceSlice, cfg *core.MSMConfig, output
 	cCfg := (*C.MSMConfig)(unsafe.Pointer(cfg))
 	cOutputBases := (*C.g2_affine_t)(outputBasesPointer)
 
+	start := time.Now()
 	__ret := C.bn254_g2_msm_precompute_bases(cBases, cBasesLen, cCfg, cOutputBases)
 	err := runtime.EIcicleError(__ret)
 

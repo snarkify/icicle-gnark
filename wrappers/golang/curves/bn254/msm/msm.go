@@ -30,8 +30,6 @@ func Msm(scalars core.HostOrDeviceSlice, points core.HostOrDeviceSlice, cfg *cor
 	log := logger.Logger()
 	log.Debug().Uint64("count", count).Str("operation", "BN254_MSM").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
-	// Start timing
-	start := time.Now()
 
 	cScalars := (*C.scalar_t)(scalarsPointer)
 	cPoints := (*C.affine_t)(pointsPointer)
@@ -39,6 +37,8 @@ func Msm(scalars core.HostOrDeviceSlice, points core.HostOrDeviceSlice, cfg *cor
 	cSize := (C.int)(size)
 	cCfg := (*C.MSMConfig)(unsafe.Pointer(cfg))
 
+	// Start timing
+	start := time.Now()
 	__ret := C.bn254_msm(cScalars, cPoints, cSize, cCfg, cResults)
 	err := runtime.EIcicleError(__ret)
 
@@ -70,7 +70,6 @@ func PrecomputeBases(bases core.HostOrDeviceSlice, cfg *core.MSMConfig, outputBa
 	log.Debug().Uint64("count", count).Str("operation", "BN254_MSM_PRECOMPUTE").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
 	// Start timing
-	start := time.Now()
 
 	cBases := (*C.affine_t)(basesPointer)
 	var cBasesLen C.int
@@ -82,6 +81,7 @@ func PrecomputeBases(bases core.HostOrDeviceSlice, cfg *core.MSMConfig, outputBa
 	cCfg := (*C.MSMConfig)(unsafe.Pointer(cfg))
 	cOutputBases := (*C.affine_t)(outputBasesPointer)
 
+	start := time.Now()
 	__ret := C.bn254_msm_precompute_bases(cBases, cBasesLen, cCfg, cOutputBases)
 	err := runtime.EIcicleError(__ret)
 

@@ -34,7 +34,6 @@ func Ntt[T any](scalars core.HostOrDeviceSlice, dir core.NTTDir, cfg *core.NTTCo
 	log.Debug().Uint64("count", count).Str("operation", "BN254_NTT").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
 	// Start timing
-	start := time.Now()
 
 	cScalars := (*C.scalar_t)(scalarsPointer)
 	cSize := (C.int)(size)
@@ -42,6 +41,7 @@ func Ntt[T any](scalars core.HostOrDeviceSlice, dir core.NTTDir, cfg *core.NTTCo
 	cCfg := (*C.NTTConfig)(cfgPointer)
 	cResults := (*C.scalar_t)(resultsPointer)
 
+	start := time.Now()
 	__ret := C.bn254_ntt(cScalars, cSize, cDir, cCfg, cResults)
 	err := runtime.EIcicleError(__ret)
 
@@ -82,11 +82,10 @@ func InitDomain(primitiveRoot bn254.ScalarField, cfg core.NTTInitDomainConfig) r
 	log := logger.Logger()
 	log.Debug().Uint64("count", count).Str("operation", "BN254_NTT_INIT_DOMAIN").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
-	// Start timing
-	start := time.Now()
-
 	cPrimitiveRoot := (*C.scalar_t)(unsafe.Pointer(primitiveRoot.AsPointer()))
 	cCfg := (*C.NTTInitDomainConfig)(unsafe.Pointer(&cfg))
+
+	start := time.Now()
 	__ret := C.bn254_ntt_init_domain(cPrimitiveRoot, cCfg)
 	err := runtime.EIcicleError(__ret)
 
@@ -108,9 +107,7 @@ func ReleaseDomain() runtime.EIcicleError {
 	log := logger.Logger()
 	log.Debug().Uint64("count", count).Str("operation", "BN254_NTT_RELEASE_DOMAIN").Msg("ICICLE Operation")
 
-	// Start timing
 	start := time.Now()
-
 	__ret := C.bn254_ntt_release_domain()
 	err := runtime.EIcicleError(__ret)
 
