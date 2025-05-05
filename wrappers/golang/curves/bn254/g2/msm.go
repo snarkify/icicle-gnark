@@ -7,6 +7,7 @@ import "C"
 import (
 	"fmt"
 	"sync/atomic"
+	"time"
 	"unsafe"
 
 	"github.com/consensys/gnark/logger"
@@ -29,6 +30,9 @@ func G2Msm(scalars core.HostOrDeviceSlice, points core.HostOrDeviceSlice, cfg *c
 	log := logger.Logger()
 	log.Debug().Uint64("count", count).Str("operation", "BN254_G2_MSM").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
+	// Start timing
+	start := time.Now()
+
 	cScalars := (*C.scalar_t)(scalarsPointer)
 	cPoints := (*C.g2_affine_t)(pointsPointer)
 	cResults := (*C.g2_projective_t)(resultsPointer)
@@ -37,11 +41,36 @@ func G2Msm(scalars core.HostOrDeviceSlice, points core.HostOrDeviceSlice, cfg *c
 
 	__ret := C.bn254_g2_msm(cScalars, cPoints, cSize, cCfg, cResults)
 	err := runtime.EIcicleError(__ret)
+
+	// End timing and log
+	elapsed := time.Since(start)
+	log.Debug().
+		Uint64("count", count).
+		Str("operation", "BN254_G2_MSM").
+		Str("dimensions", dimensions).
+		Float64("duration_ms", float64(elapsed.Microseconds())/1000.0).
+		Msg("ICICLE Operation Time")
+
 	return err
 }
 
 func G2PrecomputeBases(bases core.HostOrDeviceSlice, cfg *core.MSMConfig, outputBases core.DeviceSlice) runtime.EIcicleError {
 	basesPointer, outputBasesPointer := core.PrecomputeBasesCheck(bases, cfg, outputBases)
+
+	// Log operation count
+	count := atomic.AddUint64(&g2MsmOperationsCounter, 1)
+	var basesLen int
+	if cfg.ArePointsSharedInBatch {
+		basesLen = bases.Len()
+	} else {
+		basesLen = bases.Len() / int(cfg.BatchSize)
+	}
+	dimensions := fmt.Sprintf("g2_bases: %d", basesLen)
+	log := logger.Logger()
+	log.Debug().Uint64("count", count).Str("operation", "BN254_G2_MSM_PRECOMPUTE").Str("dimensions", dimensions).Msg("ICICLE Operation")
+
+	// Start timing
+	start := time.Now()
 
 	cBases := (*C.g2_affine_t)(basesPointer)
 	var cBasesLen C.int
@@ -55,5 +84,15 @@ func G2PrecomputeBases(bases core.HostOrDeviceSlice, cfg *core.MSMConfig, output
 
 	__ret := C.bn254_g2_msm_precompute_bases(cBases, cBasesLen, cCfg, cOutputBases)
 	err := runtime.EIcicleError(__ret)
+
+	// End timing and log
+	elapsed := time.Since(start)
+	log.Debug().
+		Uint64("count", count).
+		Str("operation", "BN254_G2_MSM_PRECOMPUTE").
+		Str("dimensions", dimensions).
+		Float64("duration_ms", float64(elapsed.Microseconds())/1000.0).
+		Msg("ICICLE Operation Time")
+
 	return err
 }

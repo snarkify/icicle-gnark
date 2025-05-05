@@ -7,6 +7,7 @@ import "C"
 import (
 	"fmt"
 	"sync/atomic"
+	"time"
 
 	"github.com/consensys/gnark/logger"
 	"github.com/ingonyama-zk/icicle-gnark/v3/wrappers/golang/core"
@@ -33,6 +34,9 @@ func VecOp(a, b, out core.HostOrDeviceSlice, config core.VecOpsConfig, op core.V
 	log := logger.Logger()
 	log.Debug().Uint64("count", count).Str("operation", "BN254_VECOP").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
+	// Start timing
+	start := time.Now()
+
 	cA := (*C.scalar_t)(aPointer)
 	cB := (*C.scalar_t)(bPointer)
 	cOut := (*C.scalar_t)(outPointer)
@@ -47,6 +51,15 @@ func VecOp(a, b, out core.HostOrDeviceSlice, config core.VecOpsConfig, op core.V
 	case core.Mul:
 		ret = (runtime.EIcicleError)(C.bn254_vector_mul(cA, cB, cSize, cConfig, cOut))
 	}
+
+	// End timing and log
+	elapsed := time.Since(start)
+	log.Debug().
+		Uint64("count", count).
+		Str("operation", "BN254_VECOP").
+		Str("dimensions", dimensions).
+		Float64("duration_ms", float64(elapsed.Microseconds())/1000.0).
+		Msg("ICICLE Operation Time")
 
 	return ret
 }

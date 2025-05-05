@@ -7,6 +7,7 @@ import "C"
 import (
 	"fmt"
 	"sync/atomic"
+	"time"
 	"unsafe"
 
 	"github.com/consensys/gnark/logger"
@@ -32,6 +33,9 @@ func Ntt[T any](scalars core.HostOrDeviceSlice, dir core.NTTDir, cfg *core.NTTCo
 	log := logger.Logger()
 	log.Debug().Uint64("count", count).Str("operation", "BN254_NTT").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
+	// Start timing
+	start := time.Now()
+
 	cScalars := (*C.scalar_t)(scalarsPointer)
 	cSize := (C.int)(size)
 	cDir := (C.int)(dir)
@@ -40,6 +44,16 @@ func Ntt[T any](scalars core.HostOrDeviceSlice, dir core.NTTDir, cfg *core.NTTCo
 
 	__ret := C.bn254_ntt(cScalars, cSize, cDir, cCfg, cResults)
 	err := runtime.EIcicleError(__ret)
+
+	// End timing and log
+	elapsed := time.Since(start)
+	log.Debug().
+		Uint64("count", count).
+		Str("operation", "BN254_NTT").
+		Str("dimensions", dimensions).
+		Float64("duration_ms", float64(elapsed.Microseconds())/1000.0).
+		Msg("ICICLE Operation Time")
+
 	return err
 }
 
@@ -62,15 +76,51 @@ func GetRootOfUnity(size uint64) bn254.ScalarField {
 }
 
 func InitDomain(primitiveRoot bn254.ScalarField, cfg core.NTTInitDomainConfig) runtime.EIcicleError {
+	// Log operation count
+	count := atomic.AddUint64(&nttOperationsCounter, 1)
+	dimensions := fmt.Sprintf("max_size: %d", cfg.MaxSize)
+	log := logger.Logger()
+	log.Debug().Uint64("count", count).Str("operation", "BN254_NTT_INIT_DOMAIN").Str("dimensions", dimensions).Msg("ICICLE Operation")
+
+	// Start timing
+	start := time.Now()
+
 	cPrimitiveRoot := (*C.scalar_t)(unsafe.Pointer(primitiveRoot.AsPointer()))
 	cCfg := (*C.NTTInitDomainConfig)(unsafe.Pointer(&cfg))
 	__ret := C.bn254_ntt_init_domain(cPrimitiveRoot, cCfg)
 	err := runtime.EIcicleError(__ret)
+
+	// End timing and log
+	elapsed := time.Since(start)
+	log.Debug().
+		Uint64("count", count).
+		Str("operation", "BN254_NTT_INIT_DOMAIN").
+		Str("dimensions", dimensions).
+		Float64("duration_ms", float64(elapsed.Microseconds())/1000.0).
+		Msg("ICICLE Operation Time")
+
 	return err
 }
 
 func ReleaseDomain() runtime.EIcicleError {
+	// Log operation count
+	count := atomic.AddUint64(&nttOperationsCounter, 1)
+	log := logger.Logger()
+	log.Debug().Uint64("count", count).Str("operation", "BN254_NTT_RELEASE_DOMAIN").Msg("ICICLE Operation")
+
+	// Start timing
+	start := time.Now()
+
 	__ret := C.bn254_ntt_release_domain()
 	err := runtime.EIcicleError(__ret)
+
+	// End timing and log
+	elapsed := time.Since(start)
+	log.Debug().
+		Uint64("count", count).
+		Str("operation", "BN254_NTT_RELEASE_DOMAIN").
+		Float64("duration_ms", float64(elapsed.Microseconds())/1000.0).
+		Msg("ICICLE Operation Time")
+
 	return err
 }
