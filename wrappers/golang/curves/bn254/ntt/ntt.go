@@ -5,15 +5,32 @@ package ntt
 import "C"
 
 import (
+	"fmt"
+	"sync/atomic"
 	"unsafe"
 
+	"github.com/consensys/gnark/logger"
 	"github.com/ingonyama-zk/icicle-gnark/v3/wrappers/golang/core"
 	bn254 "github.com/ingonyama-zk/icicle-gnark/v3/wrappers/golang/curves/bn254"
 	"github.com/ingonyama-zk/icicle-gnark/v3/wrappers/golang/runtime"
 )
 
+var nttOperationsCounter uint64 = 0
+
 func Ntt[T any](scalars core.HostOrDeviceSlice, dir core.NTTDir, cfg *core.NTTConfig[T], results core.HostOrDeviceSlice) runtime.EIcicleError {
 	scalarsPointer, resultsPointer, size, cfgPointer := core.NttCheck[T](scalars, cfg, results)
+
+	// Log operation count and dimensions
+	count := atomic.AddUint64(&nttOperationsCounter, 1)
+	var direction string
+	if dir == core.KForward {
+		direction = "forward"
+	} else {
+		direction = "inverse"
+	}
+	dimensions := fmt.Sprintf("size: %d, direction: %s", size, direction)
+	log := logger.Logger()
+	log.Debug().Uint64("count", count).Str("operation", "BN254_NTT").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
 	cScalars := (*C.scalar_t)(scalarsPointer)
 	cSize := (C.int)(size)

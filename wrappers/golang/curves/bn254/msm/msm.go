@@ -5,11 +5,16 @@ package msm
 import "C"
 
 import (
+	"fmt"
+	"sync/atomic"
 	"unsafe"
 
+	"github.com/consensys/gnark/logger"
 	"github.com/ingonyama-zk/icicle-gnark/v3/wrappers/golang/core"
 	"github.com/ingonyama-zk/icicle-gnark/v3/wrappers/golang/runtime"
 )
+
+var msmOperationsCounter uint64 = 0
 
 func GetDefaultMSMConfig() core.MSMConfig {
 	return core.GetDefaultMSMConfig()
@@ -17,6 +22,12 @@ func GetDefaultMSMConfig() core.MSMConfig {
 
 func Msm(scalars core.HostOrDeviceSlice, points core.HostOrDeviceSlice, cfg *core.MSMConfig, results core.HostOrDeviceSlice) runtime.EIcicleError {
 	scalarsPointer, pointsPointer, resultsPointer, size := core.MsmCheck(scalars, points, cfg, results)
+
+	// Log operation count and dimensions
+	count := atomic.AddUint64(&msmOperationsCounter, 1)
+	dimensions := fmt.Sprintf("scalars: %d, points: %d", size, size)
+	log := logger.Logger()
+	log.Debug().Uint64("count", count).Str("operation", "BN254_MSM").Str("dimensions", dimensions).Msg("ICICLE Operation")
 
 	cScalars := (*C.scalar_t)(scalarsPointer)
 	cPoints := (*C.affine_t)(pointsPointer)
